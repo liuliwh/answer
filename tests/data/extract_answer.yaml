@@ -1,0 +1,13 @@
+---
+no_answer_id:
+  text: |
+    <html> <body> <div id="answers" class="no-answer"> </div></body></html>
+  expected:
+no_pre_no_code_return_text:
+  text: |
+    <html> <body> <div id="answers"> <div class="answercell post-layout--right"> <div class="s-prose js-post-body" itemprop="text"> <p>Hello</p></div></div></div></body></html>
+  expected: Hello
+code_under_pre_return_code:
+  text: |
+    <html> <body> <div id="answers"> <div class="answercell post-layout--right"> <div class="s-prose js-post-body" itemprop="text"> <pre><code>traceback.print_exception(type(ex), ex, ex.__traceback__)</code></pre> </div></div></div></body></html>
+  expected: traceback.print_exception(type(ex), ex, ex.__traceback__)

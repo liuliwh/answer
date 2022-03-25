@@ -1,0 +1,64 @@
+---
+stack_trace_python_1:
+  query: stack trace python
+  num_answer: 1
+  description: answer basic
+  answers:
+    - link: https://stackoverflow.com/questions/3702675/how-to-catch-and-print-the-full-exception-traceback-without-halting-exiting-the
+      result: |
+        import traceback
+        import sys
+
+        try:
+            do_stuff()
+        except Exception:
+            print(traceback.format_exc())
+            # or
+            print(sys.exc_info()[2])
+stack_trace_python_2:
+  query: stack trace python
+  num_answer: 2
+  description: return 2 answers as requested
+  answers:
+    - link: https://stackoverflow.com/questions/3702675/how-to-catch-and-print-the-full-exception-traceback-without-halting-exiting-the
+      result: |
+        import traceback
+        import sys
+
+        try:
+            do_stuff()
+        except Exception:
+            print(traceback.format_exc())
+            # or
+            print(sys.exc_info()[2])
+    - link: https://stackoverflow.com/questions/52742612/how-to-print-the-stack-trace-of-an-exception-object-in-python
+      result: |
+        traceback.print_exception(type(ex), ex, ex.__traceback__)
+hello_world:
+  query: hello world
+  num_answer: 1
+  description: return text when no code
+  answers:
+    - link: https://stackoverflow.com/questions/602237/where-does-hello-world-come-from
+      result:
+        Brian Kernighan actually wrote the first "hello, world" program as part
+        of the documentation for the BCPL programming language developed by Martin Richards.
+        BCPL was used while C was being developed at Bell Labs a few years before the
+        publication of Kernighan and Ritchie's C book in 1972.As part of the research
+        for a book I was writing about the Alice programming environment, I corresponded
+        with both Prof. Kernighan at Princeton and Martin Richards at Cambridge (when
+        I was teaching a seminar there in the 1990’s). They helped me to track the first
+        documented use of code to print the message "Hello, World!” Brian Kernighan
+        remembered writing the code for part of the I/O section of the BCPL manual.
+        Martin Richards -- who seems to have a treasure trove of notes, old documents,
+        etc. -- found the manual and confirmed that this was the original appearance
+        of the program. The code was used for early testing of the C compiler and made
+        its way into Kernighan and Ritchie's book. Later, it was one of the first programs
+        used to test Bjarne Stroustrup's C++ compiler.It became a standard for new programmers
+        after it appeared in Kernighan and Ritchie, whichis probably the best selling
+        introduction to programming of all time.
+cook:
+  query: cook
+  num_answer: 1
+  description: return emtpy array when no question link
+  answers: []

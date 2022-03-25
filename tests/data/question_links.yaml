@@ -1,0 +1,13 @@
+---
+stack_trace_python:
+  query: stack trace python
+  question_links:
+    - https://stackoverflow.com/questions/3702675/how-to-catch-and-print-the-full-exception-traceback-without-halting-exiting-the
+    - https://stackoverflow.com/questions/52742612/how-to-print-the-stack-trace-of-an-exception-object-in-python
+    - https://stackoverflow.com/questions/60987417/python-exception-how-to-print-the-last-ten-lines-of-stack-trace
+    - https://stackoverflow.com/questions/48161387/python-how-to-print-the-stacktrace-of-an-exception-object-without-a-currently
+    - https://stackoverflow.com/questions/31636884/print-exception-with-stack-trace-to-file
+    - https://stackoverflow.com/questions/4564559/get-exception-description-and-stack-trace-which-caused-an-exception-all-as-a-st
+    - https://stackoverflow.com/questions/61452022/python-only-print-traceback-of-raised-exception
+    - https://stackoverflow.com/questions/3925248/print-python-stack-trace-without-exception-being-raised
+    - https://stackoverflow.com/questions/57812562/python-traceback-print-stack-how-to-colorize-and-reformat-output

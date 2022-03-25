@@ -1,0 +1,20 @@
+# env
+.tox/
+.vscode/
+*.egg-info
+.DS_Store
+
+# binary cache
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+
+# distribution code
+dist/
+
+# coverage
+.coverage
+htmlcov/
+
+# debuglog
+*.log
