@@ -111,7 +111,7 @@ def _extract_question_links(text: str) -> List[str]:
 def command_line_runner() -> None:
     parser = _get_parser()
     args = vars(parser.parse_args())
-    logging.getLogger().setLevel(args["loglevel"])
+    logging.getLogger().setLevel(args["log_level"].upper())
     if query := args["query"]:
         qstring = " ".join(query)
         result = answer(qstring, args["num_answers"])
@@ -135,23 +135,14 @@ def _get_parser() -> argparse.ArgumentParser:
         dest="num_answers",
         choices=range(1, 11),
     )
-    verbose_group = parser.add_mutually_exclusive_group()
-    verbose_group.add_argument(
-        "-d",
-        "--debug",
-        help="Print lots of debugging statements",
-        action="store_const",
-        dest="loglevel",
-        const=logging.DEBUG,
-        default=logging.WARNING,
-    )
-    verbose_group.add_argument(
+    parser.add_argument(
         "-v",
-        "--verbose",
-        help="Be verbose",
-        action="store_const",
-        dest="loglevel",
-        const=logging.INFO,
+        help="Log level",
+        type=str,
+        dest="log_level",
+        nargs="?",
+        choices=("debug", "info", "warning", "error", "critical"),
+        default="warning",
     )
 
     return parser
