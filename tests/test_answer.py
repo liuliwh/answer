@@ -107,6 +107,33 @@ def _test_get_question_links(query: str, expected: List[str]):
     assert got == expected
 
 
+def test_answer_should_throw_connection_error(monkeypatch):
+    query = "any"
+    resp = Mock(side_effect=answer.ConnectionError(query))
+    monkeypatch.setattr(answer, "_get_url_content", resp)
+    with pytest.raises(answer.ConnectionError) as e:
+        answer.answer(query)
+    assert query in str(e.value)
+
+
+def test_answer_GetQuestionLinksError(monkeypatch):
+    url, query = "any_url", "any"
+    resp = Mock(side_effect=answer.RequestException(url, query))
+    monkeypatch.setattr(answer, "_get_url_content", resp)
+    with pytest.raises(answer.GetQuestionLinksError) as e:
+        answer.answer(query)
+    assert url, query in str(e.value)
+
+
+def test_answer_GetAnswerError(monkeypatch):
+    url, query = "any_url", "any"
+    resp = Mock(side_effect=answer.RequestException(url, query))
+    monkeypatch.setattr(answer, "_get_url_content", resp)
+    with pytest.raises(answer.GetAnswerError) as e:
+        answer.get_answer(query)
+    assert url, query in str(e.value)
+
+
 def test_answer(monkeypatch_get_url_content, data_answer):
     query = data_answer["stack_trace_python_1"]
     _test_answer(query)

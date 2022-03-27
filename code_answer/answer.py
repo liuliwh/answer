@@ -1,4 +1,22 @@
-"""instant search and retreive the coding answer online"""
+"""instant search and retreive the coding answer online
+
+How does it work:
+1. Giving a query and num_answer, search possible links on site
+    stackoverflow.com from Google.
+2. Find all links starts with https://stackoverflow.com/questions/{id}/
+    as question links.
+3. Get the first num_answer entries of the question links,
+    as the working question links.
+3. For each working quesiton link, retrieve the page content, get top rated answer,
+then extract the code block or text.
+
+Available high level functions:
+- answer: Search num_answer of the code answers for a query string.
+
+Available low level functions:
+- get_question_links: Search from google, return the links of the search results.
+- get_answer: Get the top rated stackoverflows codeblock from the question link.
+"""
 import argparse
 import logging
 import re
@@ -9,17 +27,50 @@ from urllib import parse as urlparse
 import requests
 from lxml import html
 from lxml.etree import Element as EtreeElement
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import HTTPError as RequestsHTTPError
+from requests.exceptions import RequestException
 
 logging.basicConfig(format="%(levelname)s: %(message)s")
 
 
 NO_RESULTS_MESSAGE = "Sorry, couldn't find any answers with that query"
+TECHNICAL_DIFFICULTY_MESSAGE = "Sorry, there is some technical difficulty"
+CONNECTION_ERROR_MESSAGE = "Sorry, cannot connect to "
+
 
 Answer = namedtuple("Answer", ("link", "result"))
 
 
+class CodeAnswerError(Exception):
+    """Base-class for all exceptions raised by this module.
+    There was an ambiguous exception that occurred while handling your
+    request.
+    """
+
+
+class ConnectionError(CodeAnswerError):
+    """Error raised by requests ConnectionError"""
+
+
+class GetQuestionLinksError(CodeAnswerError):
+    """Ambiguous error happens during get question links phase"""
+
+
+class GetAnswerError(CodeAnswerError):
+    """Ambiguous error happens during get answer phase"""
+
+
 def answer(query: str, num_answer: int = 1) -> List[Answer]:
-    """Search code answer for a query string"""
+    """Search num_answer of the code answers for a query string
+    Raises:
+    CodeAnswerError: Generic base error in this module.
+    Derived Errors of CodeAnswerError:
+    - ConnectionError: Error caused by requests ConnectionError
+    - RequestsError: Ambiguous error raised by requests lib
+    - GetQuestionLinksError: Error happens during get question links from query.
+    - GetAnswerError: Error happens during get answer from the answer url.
+    """
     links = get_question_links(query)
     links_request = links[:num_answer]
     results: List[Answer] = []
@@ -30,9 +81,19 @@ def answer(query: str, num_answer: int = 1) -> List[Answer]:
 
 
 def get_answer(url: str) -> Optional[str]:
-    """Get the top rated stackoverflows codeblock from the url"""
+    """Get the top rated stackoverflows codeblock from the url.
+    Raises:
+    ConnectionError: failed to request url due to connection error
+    GetAnswerError when failed to request url"""
     url = _get_stackoverflow_scoredesc_url(url)
-    text = _get_url_content(url)
+    try:
+        text = _get_url_content(url)
+    except RequestsHTTPError:
+        return None
+    except RequestsConnectionError as e:
+        raise ConnectionError(url) from e
+    except RequestException as e:
+        raise GetAnswerError(url) from e
     return _extract_answer(text)
 
 
@@ -79,8 +140,8 @@ def _extract_answer_content(top_answer: EtreeElement) -> str:
 
 
 def _get_url_content(url: str) -> str:
-    """Return page content of the url.
-    Extracting this function is for the testability"""
+    """Return page content of the url in text.
+    Raises: HTTPError"""
     logging.debug(f"get_url_content from {url}")
     resp = requests.get(url)
     resp.raise_for_status()
@@ -88,9 +149,19 @@ def _get_url_content(url: str) -> str:
 
 
 def get_question_links(query: str) -> List[str]:
-    """Search from google, return the links of the search results"""
+    """Search from google, return the links of the search results.
+    Raises:
+    ConnectionError: when requests occures connection error
+    GetQuestionLinksError:"""
     url = urlencode_search_url(query)
-    text = _get_url_content(url)
+    try:
+        text = _get_url_content(url)
+    except RequestsHTTPError:
+        return []
+    except RequestsConnectionError as e:
+        raise ConnectionError(url, query) from e
+    except RequestException as e:
+        raise GetQuestionLinksError(url, query) from e
     return _extract_question_links(text)
 
 
@@ -112,12 +183,21 @@ def command_line_runner() -> None:
     parser = _get_parser()
     args = vars(parser.parse_args())
     logging.getLogger().setLevel(args["log_level"].upper())
-    if query := args["query"]:
-        qstring = " ".join(query)
-        result = answer(qstring, args["num_answers"])
-        _print_answers(result)
-    else:
+    if not args["query"]:
         parser.print_help()
+        return
+
+    qstring = " ".join(args["query"])
+    try:
+        result = answer(qstring, args["num_answers"])
+    except ConnectionError as e:
+        logging.exception(e)
+        print(f"{CONNECTION_ERROR_MESSAGE} {e}")
+    except CodeAnswerError as e:
+        logging.exception(e)
+        print(f"{TECHNICAL_DIFFICULTY_MESSAGE} {e}")
+    else:
+        _print_answers(result)
 
 
 def _get_parser() -> argparse.ArgumentParser:
