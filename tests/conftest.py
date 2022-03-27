@@ -12,8 +12,3 @@ def root_dir():
 @pytest.fixture(scope="session")
 def data_dir(root_dir):
     return Path(root_dir / "data")
-
-
-# def pytest_generate_tests(metafunc):
-#     if "query" in metafunc.fixturenames:
-#         metafunc.parametrize("query", [])

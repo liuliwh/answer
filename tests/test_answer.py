@@ -9,35 +9,36 @@ import yaml
 
 from code_answer import answer
 
-
-@pytest.fixture
-def monkeypatch_get_url_content(data_dir, monkeypatch):
-    patched_get_url_content = partial(_get_cached_url_content, data_dir=data_dir)
-    monkeypatch.setattr(answer, "_get_url_content", patched_get_url_content)
-
-
-@pytest.fixture(scope="module")
-def data_answer(data_dir) -> dict:
-    """test data for test_answer"""
-    return _from_yaml(Path(data_dir / "queries.yaml"))
-
-
-@pytest.fixture(scope="module")
-def data_extract_answer(data_dir) -> dict:
-    """test data for test_extract_answer"""
-    return _from_yaml(Path(data_dir / "extract_answer.yaml"))
-
-
-@pytest.fixture(scope="module")
-def data_question_links(data_dir) -> dict:
-    """test data for test_question_links"""
-    return _from_yaml(Path(data_dir / "question_links.yaml"))
+_yaml_dir = Path(__file__).parent / "data"
 
 
 def _from_yaml(filepath: Path):
     with filepath.open("rt") as f:
         result = yaml.safe_load(f.read())
     return result
+
+
+@pytest.fixture
+def monkeypatch_get_url_content(data_dir, monkeypatch):
+    """patch function _get_url_content to get the response
+    from the local file instead of online"""
+    patched_get_url_content = partial(_get_cached_url_content, data_dir=data_dir)
+    monkeypatch.setattr(answer, "_get_url_content", patched_get_url_content)
+
+
+def data_answers() -> dict:
+    """test data for test_answer"""
+    return _from_yaml(Path(_yaml_dir / "queries.yaml"))
+
+
+def data_extract_answers() -> dict:
+    """test data for test_extract_answer"""
+    return _from_yaml(Path(_yaml_dir / "extract_answer.yaml"))
+
+
+def data_question_links() -> dict:
+    """test data for test_question_links"""
+    return _from_yaml(Path(_yaml_dir / "question_links.yaml"))
 
 
 def _format_url_to_filename(url: str, ext: str = ".html") -> str:
@@ -71,40 +72,18 @@ def test_get_url_content():
         assert result == text
 
 
-def test_no_answers(data_extract_answer):
-    data = data_extract_answer["no_answer_id"]
-    _test_extract_answer(data["text"], data["expected"])
-
-
-def test_no_pre_no_code_return_text(data_extract_answer):
-    data = data_extract_answer["no_pre_no_code_return_text"]
-    _test_extract_answer(data["text"], data["expected"])
-
-
-def test_code_under_pre_return_code(data_extract_answer):
-    data = data_extract_answer["code_under_pre_return_code"]
-    _test_extract_answer(data["text"], data["expected"])
-
-
-def _test_extract_answer(text: str, expected: str):
-    result = answer._extract_answer(text)
+@pytest.mark.parametrize("id,data", argvalues=data_extract_answers().items())
+def test_extract_answer(id, data):
+    result = answer._extract_answer(data["text"])
     if result:
         result = result.strip()
-    assert result == expected
+    assert result == data["expected"]
 
 
-def test_get_question_links(monkeypatch_get_url_content, data_question_links):
-    data = data_question_links["stack_trace_python"]
-    _test_get_question_links(data["query"], data["question_links"])
-
-
-def test_get_question_links_no_link(monkeypatch_get_url_content):
-    _test_get_question_links("cook", [])
-
-
-def _test_get_question_links(query: str, expected: List[str]):
-    got = answer.get_question_links(query)
-    assert got == expected
+@pytest.mark.parametrize("id,data", data_question_links().items())
+def test_get_question_links(id, data, monkeypatch_get_url_content):
+    got = answer.get_question_links(data["query"])
+    assert got == data["question_links"]
 
 
 def test_answer_should_throw_connection_error(monkeypatch):
@@ -134,27 +113,8 @@ def test_answer_GetAnswerError(monkeypatch):
     assert url, query in str(e.value)
 
 
-def test_answer(monkeypatch_get_url_content, data_answer):
-    query = data_answer["stack_trace_python_1"]
-    _test_answer(query)
-
-
-def test_answer_return_text_when_no_code(monkeypatch_get_url_content, data_answer):
-    query = data_answer["hello_world"]
-    _test_answer(query)
-
-
-def test_answer_num_answers(monkeypatch_get_url_content, data_answer):
-    query = data_answer["stack_trace_python_2"]
-    _test_answer(query)
-
-
-def test_answer_no_question_links(monkeypatch_get_url_content, data_answer):
-    query = data_answer["cook"]
-    _test_answer(query)
-
-
-def _test_answer(query):
+@pytest.mark.parametrize("id,query", data_answers().items())
+def test_answer(id, query, monkeypatch_get_url_content):
     got = answer.answer(query["query"], query["num_answer"])
     _validate_answers(got, query["answers"])
 
