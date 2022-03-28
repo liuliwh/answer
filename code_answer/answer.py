@@ -31,7 +31,7 @@ from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import HTTPError as RequestsHTTPError
 from requests.exceptions import RequestException
 
-logging.basicConfig(format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 
 NO_RESULTS_MESSAGE = "Sorry, couldn't find any answers with that query"
@@ -87,8 +87,10 @@ def get_answer(url: str) -> Optional[str]:
     GetAnswerError when failed to request url"""
     url = _get_stackoverflow_scoredesc_url(url)
     try:
+        logger.info("Answer URL: %s", url)
         text = _get_url_content(url)
     except RequestsHTTPError:
+        logger.info("RequestsHTTPError: %s", url)
         return None
     except RequestsConnectionError as e:
         raise ConnectionError(url) from e
@@ -116,9 +118,9 @@ def _get_stackoverflow_scoredesc_url(url: str) -> str:
 def _extract_answer(htmldoc: str) -> Optional[str]:
     """Extract codeblock from the answer page content"""
     try:
-        answers = html.document_fromstring(htmldoc).get_element_by_id("answers")
-        top_answer = answers.find_class("answercell")[0]
+        top_answer = html.document_fromstring(htmldoc).find_class("answercell")[0]
     except (KeyError, IndexError):
+        logger.info("No answercell found!")
         return None
     else:
         return _extract_answer_content(top_answer)
@@ -142,7 +144,6 @@ def _extract_answer_content(top_answer: EtreeElement) -> str:
 def _get_url_content(url: str) -> str:
     """Return page content of the url in text.
     Raises: HTTPError"""
-    logging.debug(f"get_url_content from {url}")
     resp = requests.get(url)
     resp.raise_for_status()
     return resp.text
@@ -155,6 +156,7 @@ def get_question_links(query: str) -> List[str]:
     GetQuestionLinksError:"""
     url = urlencode_search_url(query)
     try:
+        logger.info("Search engine URL: %s for %s", url, query)
         text = _get_url_content(url)
     except RequestsHTTPError:
         return []
@@ -162,7 +164,10 @@ def get_question_links(query: str) -> List[str]:
         raise ConnectionError(url, query) from e
     except RequestException as e:
         raise GetQuestionLinksError(url, query) from e
-    return _extract_question_links(text)
+    else:
+        links = _extract_question_links(text)
+        logger.info("Question links from %s: %s", url, links)
+        return links
 
 
 def urlencode_search_url(query: str) -> str:
@@ -182,7 +187,7 @@ def _extract_question_links(text: str) -> List[str]:
 def command_line_runner() -> None:
     parser = _get_parser()
     args = vars(parser.parse_args())
-    logging.getLogger().setLevel(args["log_level"].upper())
+    logging.basicConfig(level=args["log_level"].upper())
     if not args["query"]:
         parser.print_help()
         return
